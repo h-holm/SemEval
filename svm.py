@@ -105,12 +105,12 @@ def main():
         ))
 
     results = sorted(results, key=lambda x: x[1], reverse=True)  # Order by recall
-    width = (25+10+10+10+30)
+    width = (25+10+10+10+4+30)
     print("=" * width)
-    print("%-25s%10s%10s%10s%30s" % ("Classifier", "Recall", "F1", "Accuracy", "Class recall (%s)" % str(list(classes))))
+    print("%-25s%10s%10s%10s    %-30s" % ("Classifier", "Recall", "F1", "Accuracy", "Class recall (%s)" % ",".join(classes)))
     print("-" * width)
     for result in results:
-        print("%-25s%10.2f%10.2f%10.2f%30s" % result)
+        print("%-25s%10.2f%10.2f%10.2f    %-30s" % result)
     print("=" * width)
 
 
