@@ -104,6 +104,13 @@ def divideTweetIntoTweetAndSentimentData(tweet, subtask):
     return tweet
 
 
+def get_tweets(train_or_test, subtask):
+    dict_of_tweets = readAndStoreTweets(train_or_test, subtask)
+    dict_of_tweets = removeFaultyTweets(dict_of_tweets)
+    dict_of_tweets = modifyTweetsInDictionary(dict_of_tweets, subtask)
+    return dict_of_tweets
+
+
 def main():
     train_or_test = "train"
     # train_or_test = "test"

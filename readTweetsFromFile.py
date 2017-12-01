@@ -75,6 +75,12 @@ def divideTweetIntoTweetAndSentimentData(tweet, subtask):
     return tweet
 
 
+def get_tweets(subtask):
+    dict_of_tweets = readAndStoreTweets(subtask)
+    dict_of_tweets = modifyTweetsInDictionary(dict_of_tweets, subtask)
+    return dict_of_tweets
+
+
 def main():
     # Choose either subtask 1, subtask 2 or subtask 3 by changing the integer.
     # Subtask A (subtask 1) is deciding a sentiment: POS, NEUTRAL or NEG.
