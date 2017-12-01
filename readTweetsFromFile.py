@@ -30,8 +30,10 @@ def readAndStoreTweets(subtask):
         tweet_number = 0
         # Each row in the training file corresponds to a tweet.
         for tweet in content:
-            dict_of_tweets[tweet_number] = tweet
-            tweet_number += 1
+            tweet_values = divideTweetIntoTweetAndSentimentData(tweet, subtask)
+            if tweet_values[-1] != "off topic":
+                dict_of_tweets[tweet_number] = tweet_values
+                tweet_number += 1
 
     return dict_of_tweets
 
@@ -77,7 +79,6 @@ def divideTweetIntoTweetAndSentimentData(tweet, subtask):
 
 def get_tweets(subtask):
     dict_of_tweets = readAndStoreTweets(subtask)
-    dict_of_tweets = modifyTweetsInDictionary(dict_of_tweets, subtask)
     return dict_of_tweets
 
 
@@ -89,7 +90,6 @@ def main():
     subtask = 1
 
     dict_of_tweets = readAndStoreTweets(subtask)
-    dict_of_tweets = modifyTweetsInDictionary(dict_of_tweets, subtask)
     print("\nThis is what a value in the output dictionary looks like:")
     print(dict_of_tweets[0])
 
