@@ -81,21 +81,37 @@ def main():
     from itertools import product
     for depth, min_samples in product(depths, mins):
         clf = RandomForestClassifier(class_weight='balanced', max_depth=depth, min_samples_split=min_samples)
-        clfrs.append(("%d:%d" % (depth, min_samples), clf))
+        clfrs.append(("RndForest %d:%d" % (depth, min_samples), clf))
 
     vectorizer = CountVectorizer(ngram_range=(2, 6), analyzer="char")
     x, y = get_features(vectorizer, train)
 
     print("Start training and testing")
+    results = []
     for name, clf in clfrs:
+        print("Training: %s" % name)
         clf.fit(x, y)
 
         X, Y = get_features(vectorizer, test, fit=False)
         p = clf.predict(X)
 
         # Semeval report uses macro averaging, orders by recall
-        print(name)
-        print(recall_score(Y, p, average='macro'), f1_score(Y, p, average='macro'), accuracy_score(Y, p), recall_score(Y, p, average=None, labels=list(classes)))
+        results.append((
+            name,
+            recall_score(Y, p, average='macro'),
+            f1_score(Y, p, average='macro'),
+            accuracy_score(Y, p),
+            ", ".join("%2.2f" % score for score in recall_score(Y, p, average=None, labels=list(classes)))
+        ))
+
+    results = sorted(results, key=lambda x: x[1], reverse=True)  # Order by recall
+    width = (25+10+10+10+30)
+    print("=" * width)
+    print("%-25s%10s%10s%10s%30s" % ("Classifier", "Recall", "F1", "Accuracy", "Class recall (%s)" % str(list(classes))))
+    print("-" * width)
+    for result in results:
+        print("%-25s%10.2f%10.2f%10.2f%30s" % result)
+    print("=" * width)
 
 
 if __name__ == "__main__":
