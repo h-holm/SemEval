@@ -1,25 +1,18 @@
 import numpy as np
+import sys
 
 from scipy.sparse import coo_matrix, hstack
 
 from sklearn.svm import SVC, LinearSVC
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.feature_extraction import DictVectorizer
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics import f1_score, recall_score, accuracy_score
 
 from lexicon import lexicon
 from readTweetsFromFile import get_tweets
 
-
-def read_data(filename):
-    lines = []
-    with open(filename) as infile:
-        for line in infile:
-            values = line.strip().split("\t")
-            if len(values) == 2:
-                lines.append(values)
-    return lines
+from collections import defaultdict
+from random import shuffle, seed
 
 
 def get_features(vectorizer, data, fit=True):
@@ -29,6 +22,7 @@ def get_features(vectorizer, data, fit=True):
     else:
         x = vectorizer.transform(corpus)
 
+    # This actually does not make a lot of difference
     pos = set(lexicon.positive)
     neg = set(lexicon.negative)
     x2 = np.zeros((x.shape[0], 2))
@@ -44,38 +38,37 @@ def get_features(vectorizer, data, fit=True):
 
 
 def main():
-    #train = read_data("data2/semeval_train_A.txt")
-    #test  = read_data("data/semeval_test_A.txt")
-    # train, test = test, train
+    """
+    Use: python3 svm.py <set_number>
+    set_number: 1, 2 or 3
 
-    tweets = [(tweet, sentiment) for id, (tweet, _, sentiment) in get_tweets(2).items()]
+    """
+    set_id = int(sys.argv[1])
+    tweets = [(fields[0], fields[-1]) for id, fields in get_tweets(set_id).items()]
 
-    from random import shuffle, seed
-    seed(2342341)
+    seed(4)
     shuffle(tweets)
 
     split = int(len(tweets)*0.8)
+    # This should do even splits based on classes
     train, test = tweets[:split], tweets[split:]
+    classes = set()
 
-
-    targets = list(zip(*train))[1]
-    # Note how un-evenly split the data set is between pos, neut, neg. This is a problem...
-    print("Number of training examples:", len(targets))
-    print("\tPositive examples:", len(list(t for t in targets if t == "positive")))
-    print("\tNeutral examples:", len(list(t for t in targets if t == "neutral")))
-    print("\tNegative examples:", len(list(t for t in targets if t == "negative")))
-
-    targets = list(zip(*test))[1]
-    # Note how un-evenly split the data set is, this is a problem...
-    print("Number of training examples:", len(targets))
-    print("\tPositive examples:", len(list(t for t in targets if t == "positive")))
-    print("\tNeutral examples:", len(list(t for t in targets if t == "neutral")))
-    print("\tNegative examples:", len(list(t for t in targets if t == "negative")))
+    for name, data in [("training", train), ("testing", test)]:
+        targets = list(zip(*data))[1]
+        # Note how un-evenly split the data set is between pos, neut, neg. This is a problem...
+        print("Number of %s examples:" % name, len(targets))
+        clc = defaultdict(list)
+        for target in targets:
+            classes.add(target)
+            clc[target].append(target)
+        for target, lst in clc.items():
+            print("\t", target, len(lst))
 
     clfrs = []
 
     clf = SVC(decision_function_shape='ovr', kernel='linear', class_weight='balanced')
-    clfrs.append(("SVC linear", clf))
+    clfrs.append(("SVC linear, balanced", clf))
 
     clf = LinearSVC()
     clfrs.append(("LinearSVC", clf))
@@ -93,6 +86,7 @@ def main():
     vectorizer = CountVectorizer(ngram_range=(2, 6), analyzer="char")
     x, y = get_features(vectorizer, train)
 
+    print("Start training and testing")
     for name, clf in clfrs:
         clf.fit(x, y)
 
@@ -101,7 +95,7 @@ def main():
 
         # Semeval report uses macro averaging, orders by recall
         print(name)
-        print(recall_score(Y, p, average='macro'), f1_score(Y, p, average='macro'), accuracy_score(Y, p), recall_score(Y, p, average=None, labels=["positive", "neutral", "negative"]))
+        print(recall_score(Y, p, average='macro'), f1_score(Y, p, average='macro'), accuracy_score(Y, p), recall_score(Y, p, average=None, labels=list(classes)))
 
 
 if __name__ == "__main__":
