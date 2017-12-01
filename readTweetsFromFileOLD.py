@@ -15,12 +15,12 @@ import os
 #           tweet and the key is the number of that tweet.
 def readAndStoreTweets(train_or_test, subtask):
     # The files are located in a subfolder to SemEval. Fetch them.
-    path_to_training_folder = str(os.getcwd()) + "\\SemEvalData\\" + train_or_test
+    path_to_training_folder = os.path.join(str(os.getcwd()), "SemEvalDataOLD", train_or_test)
     # Create a list of all the files in that directory.
     list_of_training_files = os.listdir(path_to_training_folder)
     # Fetch the correct file. If the subtask is 1, we want to fetch the file on
     # index 1-1=0 in list_of_training_files.
-    path_to_training_file = path_to_training_folder + "\\" + list_of_training_files[subtask-1]
+    path_to_training_file = os.path.join(path_to_training_folder, list_of_training_files[subtask-1])
 
     # This dictionary of tweets will have a given tweet's number as its key
     # and its contents as the key's value.
