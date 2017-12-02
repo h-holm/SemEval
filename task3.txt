@@ -1,0 +1,13 @@
+===================================
+Classifier                      MAE
+-----------------------------------
+Logistic Regr. saga            0.50
+Logistic Regr. sag             0.51
+LogisticAT                     0.51
+LogisticIT                     0.51
+LogisticSE                     0.51
+Logistic Regr. lbfgs           0.52
+OrdinalRidge                   0.52
+Logistic Regr. newton-cg       0.52
+Logistic Regr. balanced        0.54
+===================================
