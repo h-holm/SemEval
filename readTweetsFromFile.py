@@ -73,6 +73,8 @@ def divideTweetIntoTweetAndSentimentData(tweet, subtask):
         tweet, topic = tweet.rsplit('\t', 1)
         tweet = [tweet, topic, sentiment]
         # a_single_tweets_dict = {"tweet": tweet, "topic": topic, "sentiment": sentiment}
+    if subtask == 3:
+        tweet[-1] = int(tweet[-1])
     # print(tweet)
     return tweet
 

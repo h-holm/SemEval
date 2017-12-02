@@ -11,7 +11,6 @@ from sklearn.metrics import f1_score, recall_score, accuracy_score
 from lexicon import lexicon
 from readTweetsFromFile import get_tweets
 
-from collections import defaultdict
 from random import shuffle, seed
 
 
@@ -34,7 +33,7 @@ def get_features(vectorizer, data, fit=True):
     x = hstack((x, coo_matrix(x2)))
 
     y = targets
-    return x, y
+    return x, np.array(y)
 
 
 def main():
@@ -52,18 +51,18 @@ def main():
     split = int(len(tweets)*0.8)
     # This should do even splits based on classes
     train, test = tweets[:split], tweets[split:]
-    classes = set()
 
-    for name, data in [("training", train), ("testing", test)]:
-        targets = list(zip(*data))[1]
+    vectorizer = CountVectorizer(ngram_range=(2, 6), analyzer="char")
+    x, y = get_features(vectorizer, train)
+    X, Y = get_features(vectorizer, test, fit=False)
+
+    classes = np.unique(y)
+
+    for name, data in [("training", y), ("testing", Y)]:
         # Note how un-evenly split the data set is between pos, neut, neg. This is a problem...
-        print("Number of %s examples:" % name, len(targets))
-        clc = defaultdict(list)
-        for target in targets:
-            classes.add(target)
-            clc[target].append(target)
-        for target, lst in clc.items():
-            print("\t", target, len(lst))
+        print("Number of %s examples:" % name, len(data))
+        for cl in classes:
+            print("\t", cl, np.sum(data == cl))
 
     clfrs = []
 
@@ -83,16 +82,11 @@ def main():
         clf = RandomForestClassifier(class_weight='balanced', max_depth=depth, min_samples_split=min_samples)
         clfrs.append(("RndForest %d:%d" % (depth, min_samples), clf))
 
-    vectorizer = CountVectorizer(ngram_range=(2, 6), analyzer="char")
-    x, y = get_features(vectorizer, train)
-
     print("Start training and testing")
     results = []
     for name, clf in clfrs:
         print("Training: %s" % name)
         clf.fit(x, y)
-
-        X, Y = get_features(vectorizer, test, fit=False)
         p = clf.predict(X)
 
         # Semeval report uses macro averaging, orders by recall
@@ -101,7 +95,7 @@ def main():
             recall_score(Y, p, average='macro'),
             f1_score(Y, p, average='macro'),
             accuracy_score(Y, p),
-            ", ".join("%2.2f" % score for score in recall_score(Y, p, average=None, labels=list(classes)))
+            ", ".join("%2.2f" % score for score in recall_score(Y, p, average=None, labels=classes))
         ))
 
     results = sorted(results, key=lambda x: x[1], reverse=True)  # Order by recall
