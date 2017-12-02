@@ -45,6 +45,9 @@ def main():
     set_id = int(sys.argv[1])
     tweets = [(fields[0], fields[-1]) for id, fields in get_tweets(set_id).items()]
 
+    if set_id == 2:
+        tweets = [(tw, sent) for tw, sent in tweets if sent != "neutral"]
+
     seed(4)
     shuffle(tweets)
 
