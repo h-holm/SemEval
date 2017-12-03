@@ -5,7 +5,9 @@ from scipy.sparse import coo_matrix, hstack
 
 from sklearn.svm import SVC, LinearSVC
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
+from sklearn.feature_selection import VarianceThreshold, SelectKBest
+from sklearn.feature_selection import chi2, mutual_info_regression, mutual_info_classif
 from sklearn.metrics import f1_score, recall_score, accuracy_score
 
 from lexicon import lexicon
@@ -13,13 +15,24 @@ from readTweetsFromFile import get_tweets
 
 from random import shuffle, seed
 
+from moreFeatures import more_features
 
-def get_features(vectorizer, data, fit=True):
+
+vectorizer = CountVectorizer(ngram_range=(2, 5), analyzer="char")
+tfidf = TfidfTransformer()
+threashold = VarianceThreshold(threshold=0.00001)
+
+
+def get_features(data, fit=True):
     corpus, targets = zip(*data)
     if fit:
         x = vectorizer.fit_transform(corpus)
+        x = tfidf.fit_transform(x)
+        x = threashold.fit_transform(x)
     else:
         x = vectorizer.transform(corpus)
+        x = tfidf.transform(x)
+        x = threashold.transform(x)
 
     # This actually does not make a lot of difference
     pos = set(lexicon.positive)
@@ -30,7 +43,7 @@ def get_features(vectorizer, data, fit=True):
         x2[i, 0] = len(words & pos) / len(words)
         x2[i, 1] = len(words & neg) / len(words)
 
-    x = hstack((x, coo_matrix(x2)))
+    x = hstack((x, coo_matrix(x2), coo_matrix(more_features(corpus))))
 
     y = targets
     return x, np.array(y)
@@ -55,9 +68,9 @@ def main():
     # This should do even splits based on classes
     train, test = tweets[:split], tweets[split:]
 
-    vectorizer = CountVectorizer(ngram_range=(2, 6), analyzer="char")
-    x, y = get_features(vectorizer, train)
-    X, Y = get_features(vectorizer, test, fit=False)
+    x, y = get_features(train)
+    X, Y = get_features(test, fit=False)
+    print("Number of features:", x.shape[1])
 
     classes = np.unique(y)
 
@@ -82,8 +95,11 @@ def main():
     mins = [5, 10, 15, 20]
     from itertools import product
     for depth, min_samples in product(depths, mins):
-        clf = RandomForestClassifier(class_weight='balanced', max_depth=depth, min_samples_split=min_samples)
-        clfrs.append(("RndForest %d:%d" % (depth, min_samples), clf))
+        clf = RandomForestClassifier(class_weight='balanced',
+                                     max_depth=depth,
+                                     n_estimators=100,
+                                     min_samples_split=min_samples)
+        #clfrs.append(("RndForest %d:%d" % (depth, min_samples), clf))
 
     print("Start training and testing")
     results = []
@@ -107,7 +123,7 @@ def main():
     print("%-25s%10s%10s%10s    %-30s" % ("Classifier", "Recall", "F1", "Accuracy", "Class recall (%s)" % ",".join(classes)))
     print("-" * width)
     for result in results:
-        print("%-25s%10.2f%10.2f%10.2f    %-30s" % result)
+        print("%-25s%10.3f%10.3f%10.3f    %-30s" % result)
     print("=" * width)
 
 

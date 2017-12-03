@@ -27,9 +27,9 @@ def main():
     # This should do even splits based on classes
     train, test = tweets[:split], tweets[split:]
 
-    vectorizer = CountVectorizer(ngram_range=(2, 6), analyzer="char")
-    x, y = get_features(vectorizer, train)
-    X, Y = get_features(vectorizer, test, fit=False)
+    x, y = get_features(train)
+    X, Y = get_features(test, fit=False)
+    print("Number of features:", x.shape[1])
 
     classes = np.unique(y)
 
@@ -75,6 +75,7 @@ def main():
         clf.fit(x, y)
         p = clf.predict(X)
         score = metrics.mean_absolute_error(p, Y)
+        print(score)
         results.append((
             name,
             score
@@ -86,7 +87,7 @@ def main():
     print("%-25s%10s" % ("Classifier", "MAE"))
     print("-" * width)
     for result in results:
-        print("%-25s%10.2f" % result)
+        print("%-25s%10.3f" % result)
     print("=" * width)
 
 

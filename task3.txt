@@ -11,3 +11,18 @@ OrdinalRidge                   0.52
 Logistic Regr. newton-cg       0.52
 Logistic Regr. balanced        0.54
 ===================================
+
+Using tf-idf and variance threshold
+===================================
+Classifier                      MAE
+-----------------------------------
+LogisticSE                     0.48
+Logistic Regr. lbfgs           0.48
+LogisticAT                     0.49
+LogisticIT                     0.49
+Logistic Regr. newton-cg       0.50
+OrdinalRidge                   0.50
+Logistic Regr. sag             0.53
+Logistic Regr. saga            0.55
+Logistic Regr. balanced        0.72
+===================================
