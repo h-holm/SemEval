@@ -7,7 +7,7 @@ from sklearn import linear_model, metrics
 from mord import OrdinalRidge, LogisticAT, LogisticIT, LogisticSE
 
 from readTweetsFromFile import get_tweets
-from svm import get_features
+from svm import get_bow, get_ngrams
 
 
 def main():
@@ -27,67 +27,77 @@ def main():
     # This should do even splits based on classes
     train, test = tweets[:split], tweets[split:]
 
-    x, y = get_features(train)
-    X, Y = get_features(test, fit=False)
-    print("Number of features:", x.shape[1])
-
-    classes = np.unique(y)
-
-    for name, data in [("training", y), ("testing", Y)]:
-        # Note how un-evenly split the data set is between pos, neut, neg. This is a problem...
-        print("Number of %s examples:" % name, len(data))
-        for cl in classes:
-            print("\t", cl, np.sum(data == cl))
-
-    clfrs = []
-
-    clf = OrdinalRidge()
-    clfrs.append(("OrdinalRidge", clf))
-
-    clf = LogisticAT(alpha=1.)
-    clfrs.append(("LogisticAT", clf))
-
-    clf = LogisticIT(alpha=1.)
-    clfrs.append(("LogisticIT", clf))
-
-    clf = LogisticSE(alpha=1.)
-    clfrs.append(("LogisticSE", clf))
-
-    clf = linear_model.LogisticRegression(solver='lbfgs', multi_class='multinomial')
-    clfrs.append(("Logistic Regr. lbfgs", clf))
-
-    clf = linear_model.LogisticRegression(solver='newton-cg', multi_class='multinomial')
-    clfrs.append(("Logistic Regr. newton-cg", clf))
-
-    clf = linear_model.LogisticRegression(solver='sag', multi_class='multinomial')
-    clfrs.append(("Logistic Regr. sag", clf))
-
-    clf = linear_model.LogisticRegression(solver='saga', multi_class='multinomial')
-    clfrs.append(("Logistic Regr. saga", clf))
-
-    clf = linear_model.LogisticRegression(solver='lbfgs', multi_class='multinomial', class_weight='balanced')
-    clfrs.append(("Logistic Regr. balanced", clf))
-
-    print("Start training and testing")
     results = []
-    for name, clf in clfrs:
-        print("Training: %s" % name)
-        clf.fit(x, y)
-        p = clf.predict(X)
-        score = metrics.mean_absolute_error(p, Y)
-        print(score)
-        results.append((
-            name,
-            score
-        ))
+    for ff_name, feature_function in [("n-grams", get_ngrams), ("BOW", get_bow)]:
+        x, y = feature_function(train)
+        X, Y = feature_function(test, fit=False)
+        print("Number of features:", x.shape[1])
 
-    results = sorted(results, key=lambda x: x[1])  # Order by recall
-    width = (25+10)
+        classes = np.unique(y)
+
+        for name, data in [("training", y), ("testing", Y)]:
+            # Note how un-evenly split the data set is between pos, neut, neg. This is a problem...
+            print("Number of %s examples:" % name, len(data))
+            for cl in classes:
+                print("\t", cl, np.sum(data == cl))
+
+        clfrs = []
+
+        clf = OrdinalRidge()
+        clfrs.append(("OrdinalRidge", clf))
+
+        clf = LogisticAT(alpha=1.)
+        clfrs.append(("LogisticAT", clf))
+
+        clf = LogisticIT(alpha=1.)
+        clfrs.append(("LogisticIT", clf))
+
+        clf = LogisticSE(alpha=1.)
+        clfrs.append(("LogisticSE", clf))
+
+        clf = linear_model.LogisticRegression(solver='lbfgs', multi_class='multinomial')
+        clfrs.append(("Logistic Regr. lbfgs", clf))
+
+        clf = linear_model.LogisticRegression(solver='newton-cg', multi_class='multinomial')
+        clfrs.append(("Logistic Regr. newton-cg", clf))
+
+        clf = linear_model.LogisticRegression(solver='sag', multi_class='multinomial')
+        clfrs.append(("Logistic Regr. sag", clf))
+
+        clf = linear_model.LogisticRegression(solver='saga', multi_class='multinomial')
+        clfrs.append(("Logistic Regr. saga", clf))
+
+        clf = linear_model.LogisticRegression(solver='lbfgs', multi_class='multinomial', class_weight='balanced')
+        clfrs.append(("Logistic Regr. balanced", clf))
+
+        print("Start training and testing")
+        for name, clf in clfrs:
+            clf.fit(x, y)
+            p = clf.predict(X)
+            if "Regr." in name:
+                p = [round(c) for c in p]
+            score = metrics.mean_absolute_error(p, Y)
+            from collections import defaultdict
+            mscores = defaultdict(list)
+            for cls, pred in zip(Y, p):
+                mscores[cls].append(cls-pred)
+            macroscore = sum([abs(sum(v))/len(v) for k,v in mscores.items()])/len(classes)
+
+            print(name, ff_name, score)
+            results.append((
+                name,
+                ff_name,
+                score,
+                macroscore
+            ))
+
+    results = sorted(results, key=lambda x: x[3])  # Order by recall
+    width = (25+10+10+10)
     print("=" * width)
-    print("%-25s%10s" % ("Classifier", "MAE"))
+    print("%-25s%10s%10s%10s" % ("Classifier", "Features", "MAE", "MAE"))
     print("-" * width)
     for result in results:
-        print("%-25s%10.3f" % result)
+        print("%-25s%10s%10.3f%10.3f" % result)
     print("=" * width)
 
 
