@@ -3,6 +3,9 @@ from nltk.tokenize import TweetTokenizer
 
 
 def tokenize(data):
+    """
+    Tokenizes data into words, hashtags, mentions and symbols (emojis)
+    """
     tkzr = TweetTokenizer(reduce_len=True)
     corpus = []
     for line in data:
@@ -11,6 +14,9 @@ def tokenize(data):
 
 
 def more_features(data):
+    """
+    Creates a feature matrix with a few handpicked features
+    """
     corpus = tokenize(data)
     features = []
 

@@ -18,6 +18,7 @@ from random import shuffle, seed
 
 from moreFeatures import more_features
 
+# Configuration for feature extractors
 tkzr = TweetTokenizer(reduce_len=True)
 vectorizer = CountVectorizer(ngram_range=(2, 5), analyzer="char")
 bow = CountVectorizer(tokenizer=tkzr.tokenize)
@@ -26,6 +27,10 @@ threashold = VarianceThreshold(threshold=0.00001)
 
 
 def get_ngrams(data, fit=True):
+    """
+    Creates feature matrix of n-grams forom a list of tweets
+
+    """
     corpus, targets = zip(*data)
     if fit:
         x = vectorizer.fit_transform(corpus)
@@ -52,6 +57,11 @@ def get_ngrams(data, fit=True):
 
 
 def get_bow(data, fit=True):
+    """
+    Creates features matrix with bag-of-words and a few
+    additional handpicked features form a list of tweets
+
+    """
     corpus, targets = zip(*data)
     if fit:
         x = bow.fit_transform(corpus)
