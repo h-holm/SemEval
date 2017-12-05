@@ -32,7 +32,7 @@ def more_features(data):
         uppercase.append(len([token for token in tweet if token == "..."]))
     features.append(uppercase)
 
-    # !!!
+    # ???
     uppercase = []
     for tweet in corpus:
         uppercase.append(len([token for token in tweet if token == "?"]))
